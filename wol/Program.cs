@@ -4,40 +4,50 @@ using Mono.Options;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Reflection;
 
 namespace wol
 {
     class Program
     {
 
+        //version control variable
+        const string VERSION = "1.0.1";
+
+        /// <summary>
+        /// entry point of the program
+        /// </summary>
+        /// <param name="args">list of argument provided at runtime</param>
         static void Main(string[] args)
         {
             IPAddress ip = null;
             PhysicalAddress mac = null;
             int port = 7;
-            int verbosity = 1;
+            int debug = 1;
             bool shouldShowHelp = false;
+            bool shouldShowVersion = false;
 
             string ipString = null;
             string macString = null;
             string portString = null;
-            string verbosityString = null;
+            string debugString = null;
 
             var options = new OptionSet
             {
                 { "a|address=", "the address to reach the device (can be IPv4, IPv6 or an hostname), default=255.255.255.255", a => ipString = a },
                 { "m|mac=", "the mac address of the device used for creating the magic packet", m => macString = m },
                 { "p|port=", "port to use to send the magic packet, default=7", p => portString = p},
-                { "v|verbosity=", "sets the debug message verbosity, 0=silent, 1=normal, 2=debug, default=1", v =>
+                { "d|debug-level=", "sets the debug message level, 0=silent, 1=normal, 2=debug, default=1", d =>
                 {
-                    if(v != null)
-                        verbosityString = v;
+                    if( d != null)
+                        debugString = d;
                 } },
-                { "s|silent", "run silently without prompt except for errors, equivalent to verbosity level 0. This option overrides verbosity", s => {
+                { "s|silent", "run silently without prompt except for errors, equivalent to debug level 0. This option overrides debug", s => {
                     if(s != null)
-                        verbosity = 0;
+                        debug = 0;
                 } },
                 { "h|help", "show this message and exit", h =>  shouldShowHelp = h != null},
+                { "v|version", "show the version information", v => shouldShowVersion = v != null},
             };
 
             List<string> extra;
@@ -51,17 +61,22 @@ namespace wol
                 Error(e.Message);
             }
 
+            if (shouldShowVersion)
+            {
+                Version();
+            }
+
             if (shouldShowHelp || args.Length == 0)
             {
                 Help(options);
             }
 
-            //set the verbosity level if needed
-            if (!string.IsNullOrEmpty(verbosityString))
+            //set the debug level if needed
+            if (!string.IsNullOrEmpty(debugString))
             {
                 try
                 {
-                    verbosity = int.Parse(verbosityString);
+                    debug = int.Parse(debugString);
                 }
                 catch (Exception e)
                 {
@@ -76,7 +91,7 @@ namespace wol
                 {
                     ip = IPAddress.Parse(ipString);
 
-                    if (verbosity >= 2)
+                    if (debug >= 2)
                     {
                         Console.WriteLine("ip address set to {0}", ip.ToString());
                     }
@@ -89,7 +104,7 @@ namespace wol
                         ip = Dns.GetHostEntry(ipString).AddressList[0];
                         bool check = ip is null;
 
-                        if (verbosity >= 2)
+                        if (debug >= 2)
                         {
                             Console.WriteLine("Hostname {0} resolved to ip {1}", ipString, ip.ToString());
                         }
@@ -112,9 +127,9 @@ namespace wol
             {
                 ip = IPAddress.Broadcast;
 
-                if (verbosity >= 2)
+                if (debug >= 2)
                 {
-                    Console.WriteLine("ip address set to broadcast ({0})", ip.ToString());
+                    Console.WriteLine("IP address set to broadcast ({0})", ip.ToString());
                 }
             }
 
@@ -125,7 +140,7 @@ namespace wol
                 {
                     mac = PhysicalAddress.Parse(macString);
 
-                    if (verbosity >= 2)
+                    if (debug >= 2)
                     {
                         Console.WriteLine("Physical address set to {0}", mac);
                     }
@@ -146,7 +161,7 @@ namespace wol
                 {
                     port = int.Parse(portString);
 
-                    if (verbosity >= 2)
+                    if (debug >= 2)
                     {
                         Console.WriteLine("Port set to {0}", port);
                     }
@@ -158,7 +173,7 @@ namespace wol
             }
             else
             {
-                if (verbosity >= 2)
+                if (debug >= 2)
                 {
                     Console.WriteLine("port set to default ({0})", port);
                 }
@@ -173,13 +188,17 @@ namespace wol
                 Error(e.Message);
             }
 
-            if (verbosity >= 1)
+            if (debug >= 1)
             {
                 Console.WriteLine("Magic packet sent successfully");
             }
             
         }
 
+        /// <summary>
+        /// error management methods, prints the error message e
+        /// </summary>
+        /// <param name="e">error message to print</param>
         static void Error(string e)
         {
             Console.WriteLine("wol: {0}", e);
@@ -187,6 +206,11 @@ namespace wol
             
             Environment.Exit(1);
         }
+
+        /// <summary>
+        /// prints the help menu and quits the program
+        /// </summary>
+        /// <param name="options">list of possible options</param>
         static void Help(OptionSet options)
         {
             Console.WriteLine("Usage: wol.exe [OPTIONS]");
@@ -200,6 +224,12 @@ namespace wol
             Environment.Exit(0);
         }
 
+        /// <summary>
+        /// sends a magic packet built with the physical address ma to [ip]:[port]
+        /// </summary>
+        /// <param name="ip">internet protocol address</param>
+        /// <param name="mac">physical address</param>
+        /// <param name="port">network port to use</param>
         static void SendMP(IPAddress ip, PhysicalAddress mac, int port)
         {
 
@@ -231,6 +261,20 @@ namespace wol
             udp.Close();
             
 
+        }
+
+        /// <summary>
+        /// prints the version information
+        /// </summary>
+        static void Version()
+        {
+            Console.WriteLine("wol - {0}", VERSION);
+            Console.WriteLine("Copyright(C) 2021 Felix Cusson");
+            Console.WriteLine("MIT License: <https://github.com/Darkfull-Dante/wol/blob/master/LICENSE>");
+            Console.WriteLine("Thisi is free software: you are free to change and redistribute it.");
+            Console.WriteLine("There is NO WARANTY, to the extent permitted by law.");
+
+            Environment.Exit(0);
         }
     }
 }

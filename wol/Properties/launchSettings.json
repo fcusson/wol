@@ -2,7 +2,7 @@
   "profiles": {
     "wol": {
       "commandName": "Project",
-      "commandLineArgs": "-a=billabongvalley.local -m=00:D8:61:A8:83:97 -v=2"
+      "commandLineArgs": "-a=192.168.0.122 -m=00:D8:61:A8:83:97 -d=2"
     }
   }
 }
