@@ -12,7 +12,7 @@ namespace wol
     {
 
         //version control variable
-        const string VERSION = "1.0.1";
+        const string VERSION = "1.0.2";
 
         /// <summary>
         /// entry point of the program
